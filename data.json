@@ -2,7 +2,7 @@
   "meta": {
     "title": "quantum.date",
     "subtitle": "Overview of cryptographic exposure to quantum computation",
-    "updated": "2027-08-28T10:00Z",
+    "updated": "2026-08-28T10:00Z",
     "repo": "https://github.com/choosek/quantum.date",
     "disclaimer": "Qubit figures are algorithm-level logical-qubit resource estimates from the cited literature; they are not fixed constants and fall as algorithms improve. A machine holding enough logical qubits does not by itself break a scheme — it must also sustain the required gate depth, runtime, and logical error rate. Feasibility years are a transparent synthesis of the cited hardware roadmaps and expert surveys, carry very wide uncertainty, and are not predictions."
   },

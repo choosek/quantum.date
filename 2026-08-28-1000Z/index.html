@@ -76,14 +76,13 @@
   .gh-link svg{display:block;}
   /* switches cluster (theme + mono), stacked, sitting left of the GitHub mark */
   .controls-cluster{display:flex; align-items:center; gap:clamp(12px,2.4vw,20px); align-self:center;}
-  .switches{display:flex; flex-direction:column; gap:9px;}
-  .switch-row{display:flex; align-items:center; justify-content:flex-end; gap:9px; }
-  .switch-row{display:flex; align-items:center; justify-content:flex-end; gap:9px; margin-bottom:-7px;}
+  .switches{display:flex; flex-direction:column; gap:9px; margin-top:-1px;}
+  .switch-row{display:flex; align-items:center; justify-content:flex-end; gap:9px; margin-bottom:-10px;}
   .switch-label{font-size:.62rem; letter-spacing:.13em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; min-width:42px; text-align:right;}
-  .toggle{position:relative; width:44px; height:11px; flex:none; border-radius:23px; border:1px solid var(--line-2); background:var(--panel-2); cursor:pointer; padding:0; transition:background .16s,border-color .16s;}
-  .toggle .knob{position:absolute; top:1.5px; left:2px; width:17px; height:6px; border-radius:50%; background:var(--ink-faint); transition:transform .16s,background .16s;}
+  .toggle{position:relative; width:34px; height:13px; flex:none; border-radius:23px; border:1px solid var(--line-2); background:var(--panel-2); cursor:pointer; padding:0; transition:background .16s,border-color .16s;}
+  .toggle .knob{position:absolute; top:1.5px; left:2px; width:8px; height:8px; border-radius:50%; background:var(--ink-faint); transition:transform .16s,background .16s;}
   .toggle[aria-checked="true"]{background:rgba(242,176,31,.2); border-color:var(--gold);}
-  .toggle[aria-checked="true"] .knob{transform:translateX(21px); background:var(--gold);}
+  .toggle[aria-checked="true"] .knob{transform:translateX(20px); background:var(--gold);}
   .toggle:hover{border-color:var(--gold);}
   /* share / permalink glyph next to the date */
   .upd-wrap{display:inline-flex; align-items:center; gap:8px;}
@@ -195,7 +194,7 @@
   .qd-row::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--sev,transparent); opacity:.9;}
   .qd-row[aria-expanded="true"]{background:var(--panel);}
   .p-name{display:block; font-weight:500; font-size:1rem; letter-spacing:-0.005em; line-height:1.2;}
-  .p-fam{display:block; font-size:.78rem; color:var(--ink-faint); font-weight:400; margin-top:3px;}
+  .p-fam{display:block; font-size:.78rem; color:var(--ink-faint); font-weight:400; margin-top:4px;}
   .qd-cell{font-size:.9rem; color:var(--ink-soft); font-weight:400;}
   .qubits{font-size:1.1rem; font-weight:600; color:var(--gold); font-variant-numeric:tabular-nums; letter-spacing:-0.01em;}
   .qubits.na{color:var(--ink-faint); font-size:.92rem; font-weight:500;}
@@ -404,7 +403,7 @@
         <div class="switches">
           <div class="switch-row switch-row-dl">
             <span class="switch-label" id="theme-label">Dark</span>
-            <button class="toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-labelledby="theme-label" title="Toggle light / dark mode"><span class="knob" style="height:5px;"></span></button>
+            <button class="toggle" id="theme-toggle" type="button" role="switch" aria-checked="false" aria-labelledby="theme-label" title="Toggle light / dark mode"><span class="knob"></span></button>
           </div>
           <div class="switch-row">
             <span class="switch-label" id="mono-label">Color</span>
@@ -1231,7 +1230,7 @@
   function setupChrome(){
     var savedTheme = lsGet('qd-theme');
     var prefersLight = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
-    applyTheme(savedTheme || (prefersLight ? 'light' : 'dark'));
+    applyTheme(savedTheme || 'dark');
     applyMono(lsGet('qd-mono')==='on');
 
     var tt=byId('theme-toggle');
