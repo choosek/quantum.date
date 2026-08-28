@@ -1,2 +1,3 @@
 # quantum.date
-Curated, reference-backed compendium and tools for analyzing timelines associated with the risks of quantum computing to cryptographic protocols (and the infrastructures that rely on them).
+
+Curated, reference-backed overview of the exposure that cryptographic primitives/protocols (and some of the infrastructures that rely on them) have to advancements in quantum computing capabilities.

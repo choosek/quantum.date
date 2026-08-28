@@ -1,0 +1,1579 @@
+{
+  "meta": {
+    "title": "quantum.date",
+    "subtitle": "Overview of cryptographic exposure to quantum computation",
+    "updated": "2027-08-28T10:00Z",
+    "repo": "https://github.com/choosek/quantum.date",
+    "disclaimer": "Qubit figures are algorithm-level logical-qubit resource estimates from the cited literature; they are not fixed constants and fall as algorithms improve. A machine holding enough logical qubits does not by itself break a scheme — it must also sustain the required gate depth, runtime, and logical error rate. Feasibility years are a transparent synthesis of the cited hardware roadmaps and expert surveys, carry very wide uncertainty, and are not predictions."
+  },
+  "severityScale": [
+    {
+      "id": "catastrophic",
+      "label": "Broken",
+      "rank": 5,
+      "blurb": "Shor's algorithm recovers the private key in polynomial time. The scheme offers essentially no security against a cryptographically relevant quantum computer."
+    },
+    {
+      "id": "high",
+      "label": "Broken (large)",
+      "rank": 4,
+      "blurb": "Also fully broken by Shor, but the larger parameter needs more logical qubits and gate volume, so it falls somewhat later."
+    },
+    {
+      "id": "moderate",
+      "label": "Weakened",
+      "rank": 3,
+      "blurb": "Grover's search halves the effective security exponent. Whether this matters in practice depends heavily on circuit depth limits."
+    },
+    {
+      "id": "low",
+      "label": "Marginal",
+      "rank": 2,
+      "blurb": "Weakened only quadratically, and realistic depth/error-correction overheads erode most of that advantage. Widely considered to remain hard."
+    },
+    {
+      "id": "minimal",
+      "label": "Resilient",
+      "rank": 1,
+      "blurb": "Retains a comfortable post-quantum security margin. Included for contrast, not because it is urgent."
+    }
+  ],
+  "primitives": [
+    {
+      "id": "rsa-2048",
+      "name": "RSA-2048",
+      "family": "RSA (integer factoring)",
+      "class": "asymmetric",
+      "problem": "Integer factorization",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 2048,
+      "classicalSecurityBits": 112,
+      "logicalQubits": 6200,
+      "logicalQubitsNote": "≈ 3n + 0.002·n·lg n logical qubits (Gidney–Ekerå 2019) → ~6,200 for n = 2048. Algorithmic advances (Gidney 2025) cut the physical footprint below 1M and the logical footprint to roughly 1,400, so this number is a moving target that keeps falling.",
+      "physicalEstimate": "≈20M noisy qubits in ~8 h (Gidney–Ekerå 2019); <1M qubits in <1 week (Gidney 2025)",
+      "quantumEffect": "Fully broken — the modulus is factored, recovering the private key from the public key.",
+      "infrastructure": [
+        {
+          "system": "Web PKI / TLS certificates",
+          "detail": "RSA is still pervasive in server certificates and CA hierarchies; a break forges any RSA-signed certificate."
+        },
+        {
+          "system": "SSH",
+          "detail": "RSA host and user keys (ssh-rsa) remain common on servers and in CI systems."
+        },
+        {
+          "system": "S/MIME & PGP/GPG",
+          "detail": "RSA encryption and signing keys protecting email and files."
+        },
+        {
+          "system": "Code signing",
+          "detail": "Many software/firmware signing chains still root in RSA-2048/4096."
+        },
+        {
+          "system": "DNSSEC",
+          "detail": "A large share of signed zones use RSA (RSASHA256)."
+        },
+        {
+          "system": "JWT / OIDC",
+          "detail": "RS256-signed tokens underpin much of federated web login."
+        },
+        {
+          "system": "IPsec / IKE & VPNs",
+          "detail": "RSA authentication in enterprise VPN deployments."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019",
+        "gidney-2025"
+      ],
+      "notes": "The canonical quantum-cryptanalysis target and the definition point for a 'cryptographically relevant quantum computer' in most expert surveys."
+    },
+    {
+      "id": "secp256k1",
+      "name": "secp256k1",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2330,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 logical qubits (Roetteler et al. 2017) → 2,330 for a 256-bit curve; improved to ~2,124 (Häner et al. 2020).",
+      "physicalEstimate": "≈126,000 cat qubits in ~9 h for a 256-bit curve (Gouzien et al. 2023)",
+      "quantumEffect": "Fully broken — the private key is recovered directly from a published public key.",
+      "infrastructure": [
+        {
+          "system": "Bitcoin",
+          "detail": "Every spend is an ECDSA signature; addresses that have exposed their public key (reused addresses, P2PK, revealed on spend) are directly forgeable."
+        },
+        {
+          "system": "Ethereum & EVM chains",
+          "detail": "Account keys are secp256k1; exposed once an address transacts. Covers BSC, Polygon, Avalanche C-chain, Arbitrum, Optimism, Base and most L2s."
+        },
+        {
+          "system": "Litecoin, Bitcoin Cash, Dogecoin",
+          "detail": "Bitcoin-derived chains inherit secp256k1 signing."
+        },
+        {
+          "system": "TLS (minority)",
+          "detail": "Occasionally used for ECDSA certificates outside the NIST curves."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "proos-zalka-2003",
+        "roetteler-2017",
+        "haner-2020",
+        "gouzien-2023"
+      ],
+      "notes": "The single most economically exposed primitive: it secures the majority of public-blockchain value. Signatures reveal the public key, so any address that has ever spent is a standing target for a future 'store-now, forge-later' attack."
+    },
+    {
+      "id": "p-256",
+      "name": "NIST P-256 (secp256r1)",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2330,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → 2,330 (Roetteler et al. 2017); ~2,124 (Häner et al. 2020).",
+      "physicalEstimate": "≈126,000 cat qubits in ~9 h (Gouzien et al. 2023, same 256-bit class)",
+      "quantumEffect": "Fully broken — key exchange and signatures both fall.",
+      "infrastructure": [
+        {
+          "system": "TLS 1.2 / 1.3",
+          "detail": "The most widely negotiated ECC curve for ECDHE key exchange and ECDSA certificates on the public web."
+        },
+        {
+          "system": "WebAuthn / FIDO2 / passkeys",
+          "detail": "P-256 is the predominant attestation and assertion curve for hardware and platform authenticators."
+        },
+        {
+          "system": "Apple & Google platform keys",
+          "detail": "Secure-enclave and device identity keys."
+        },
+        {
+          "system": "Smartcards / PIV / TPM",
+          "detail": "Government and enterprise credentials and hardware roots of trust."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017",
+        "haner-2020"
+      ],
+      "notes": "Because it anchors both TLS key exchange and the passkey ecosystem, P-256 is arguably the most load-bearing asymmetric primitive on the general web."
+    },
+    {
+      "id": "x25519-ed25519",
+      "name": "Curve25519 (X25519 / Ed25519)",
+      "family": "Elliptic curve (EdDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 255,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2321,
+      "logicalQubitsNote": "Prime-field ECDLP, 9n + 2⌈log₂ n⌉ + 10 → ≈2,321 for the 255-bit field (Roetteler et al. 2017).",
+      "physicalEstimate": "Comparable to the 256-bit class: ≈126,000 cat qubits (Gouzien et al. 2023)",
+      "quantumEffect": "Fully broken — both the X25519 key agreement and Ed25519 signatures fall.",
+      "infrastructure": [
+        {
+          "system": "TLS 1.3",
+          "detail": "X25519 is the dominant key-exchange group in modern browsers and servers."
+        },
+        {
+          "system": "SSH",
+          "detail": "Ed25519 is the recommended default host/user key type."
+        },
+        {
+          "system": "Signal / WhatsApp",
+          "detail": "X3DH and the double ratchet build on X25519."
+        },
+        {
+          "system": "WireGuard",
+          "detail": "Static and ephemeral keys are Curve25519."
+        },
+        {
+          "system": "Solana, Cardano, Near, Stellar, Monero",
+          "detail": "Ed25519 account signatures (Monero uses an Ed25519 variant)."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017",
+        "haner-2020"
+      ],
+      "notes": "The default in most contemporary secure protocols. Its ubiquity in messaging and VPNs makes it a prime harvest-now, decrypt-later target."
+    },
+    {
+      "id": "rsa-1024",
+      "name": "RSA-1024",
+      "family": "RSA (integer factoring)",
+      "class": "asymmetric",
+      "problem": "Integer factorization",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 1024,
+      "classicalSecurityBits": 80,
+      "logicalQubits": 3100,
+      "logicalQubitsNote": "≈ 3n + 0.002·n·lg n → ~3,100 (Gidney–Ekerå 2019).",
+      "physicalEstimate": "Well under the 2048-bit figures; the smallest widely deployed RSA modulus",
+      "quantumEffect": "Fully broken, and already the weakest widely present RSA parameter classically.",
+      "infrastructure": [
+        {
+          "system": "Legacy TLS & certificates",
+          "detail": "Old or embedded certificates that never migrated to 2048-bit."
+        },
+        {
+          "system": "IoT & embedded firmware",
+          "detail": "Constrained devices with long field lifetimes frozen on 1024-bit keys."
+        },
+        {
+          "system": "Legacy DNSSEC & PGP keys",
+          "detail": "Older signed zones and long-lived personal keys."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "Already deprecated by NIST for classical reasons; a quantum attacker reaches it before any larger parameter."
+    },
+    {
+      "id": "ffdh-2048",
+      "name": "Finite-field Diffie–Hellman (MODP-2048)",
+      "family": "Finite-field discrete log",
+      "class": "asymmetric",
+      "problem": "Discrete log in a prime field (DLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 2048,
+      "classicalSecurityBits": 112,
+      "logicalQubits": 6200,
+      "logicalQubitsNote": "Finite-field DLP has cost comparable to factoring a modulus of the same size; ≈6,200 logical qubits for 2048-bit (Gidney–Ekerå 2019, which also treats DLP).",
+      "physicalEstimate": "Same order as RSA-2048 (~20M → <1M qubits)",
+      "quantumEffect": "Fully broken — the shared secret and any DLP-based signature are recoverable.",
+      "infrastructure": [
+        {
+          "system": "IPsec / IKEv1 & IKEv2",
+          "detail": "MODP groups (e.g. Group 14) in enterprise and site-to-site VPNs."
+        },
+        {
+          "system": "TLS DHE cipher suites",
+          "detail": "Ephemeral finite-field Diffie–Hellman where still negotiated."
+        },
+        {
+          "system": "SSH",
+          "detail": "diffie-hellman-group14 and related key-exchange methods."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "Often overlooked next to RSA and ECC, but finite-field DH still guards a great deal of VPN and legacy TLS traffic."
+    },
+    {
+      "id": "bls12-381",
+      "name": "BLS12-381",
+      "family": "Pairing-friendly curve (BLS signatures / SNARKs)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP) + pairing",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 381,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 3457,
+      "logicalQubitsNote": "ECDLP on the 381-bit base field: 9n + 2⌈log₂ n⌉ + 10 → ≈3,457 logical qubits (applying Roetteler et al. 2017). The pairing structure exposes the same underlying discrete-log problem.",
+      "physicalEstimate": "Between the 256-bit and 512-bit ECC classes",
+      "quantumEffect": "Fully broken — validator keys, aggregate signatures and many SNARK trusted-setup assumptions collapse.",
+      "infrastructure": [
+        {
+          "system": "Ethereum consensus",
+          "detail": "BLS signatures secure well over a million validators; aggregate signatures gate finality."
+        },
+        {
+          "system": "EIP-4844 blob commitments (KZG)",
+          "detail": "Data-availability commitments rely on BLS12-381 pairings."
+        },
+        {
+          "system": "Zcash (Sapling / Orchard)",
+          "detail": "Shielded transactions build on BLS12-381."
+        },
+        {
+          "system": "Filecoin, Chia, Dfinity, Aleo, Drand",
+          "detail": "BLS signatures and pairing-based proofs across storage, randomness and privacy chains."
+        },
+        {
+          "system": "zk-SNARK systems",
+          "detail": "Groth16 and PLONK deployments over BLS12-381."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "proos-zalka-2003",
+        "roetteler-2017"
+      ],
+      "notes": "Pairing-based schemes are doubly exposed: Shor solves the discrete log, and the pairing gives extra algebraic structure. Central to Ethereum's proof-of-stake security and to much of the zero-knowledge ecosystem."
+    },
+    {
+      "id": "bn254",
+      "name": "BN254 (alt_bn128)",
+      "family": "Pairing-friendly curve (SNARK verification)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP) + pairing",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 254,
+      "classicalSecurityBits": 100,
+      "logicalQubits": 2312,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → ≈2,312 for the 254-bit base field (Roetteler et al. 2017). Its classical security is already estimated below 128-bit after improved tower-field attacks.",
+      "physicalEstimate": "Same 256-bit class (~126,000 cat qubits, Gouzien et al. 2023)",
+      "quantumEffect": "Fully broken — on-chain SNARK verifiers relying on BN254 lose soundness against a quantum forger.",
+      "infrastructure": [
+        {
+          "system": "Ethereum precompiles (EIP-196/197)",
+          "detail": "The native pairing check used by most on-chain SNARK verifiers."
+        },
+        {
+          "system": "Tornado Cash & mixers",
+          "detail": "Groth16 proofs over BN254."
+        },
+        {
+          "system": "Semaphore, older zkSync, legacy Zcash",
+          "detail": "Widespread pre-BLS zero-knowledge deployments."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "Doubly weak: smaller field than BLS12-381 and already under classical pressure, so it is both the easier quantum target and the more fragile one today."
+    },
+    {
+      "id": "p-384",
+      "name": "NIST P-384 (secp384r1)",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 384,
+      "classicalSecurityBits": 192,
+      "logicalQubits": 3484,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → 3,484 (Roetteler et al. 2017).",
+      "physicalEstimate": "Between the 256-bit and 521-bit ECC classes",
+      "quantumEffect": "Fully broken; the larger field only delays the attack relative to P-256.",
+      "infrastructure": [
+        {
+          "system": "CNSA 1.0 / high-assurance PKI",
+          "detail": "Historically the curve for U.S. national-security 'Top Secret' ECC."
+        },
+        {
+          "system": "DoD CAC & government credentials",
+          "detail": "Higher-assurance smartcards and identity systems."
+        },
+        {
+          "system": "Root & intermediate CAs",
+          "detail": "Some Web PKI hierarchies use P-384 at the root."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "Moving from P-256 to P-384 raises the classical bar but does not help against Shor; it simply pushes the attack a few years out on any given hardware curve."
+    },
+    {
+      "id": "p-521",
+      "name": "NIST P-521 (secp521r1)",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 521,
+      "classicalSecurityBits": 256,
+      "logicalQubits": 4719,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → 4,719 (Roetteler et al. 2017).",
+      "physicalEstimate": "The largest standard NIST prime curve; more qubits and gate volume than P-384",
+      "quantumEffect": "Fully broken despite its large classical margin.",
+      "infrastructure": [
+        {
+          "system": "Highest-assurance ECC",
+          "detail": "Deployments choosing maximal classical strength."
+        },
+        {
+          "system": "Select TLS & VPN",
+          "detail": "Niche high-security configurations."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "A useful reminder that 256-bit classical security is no quantum defense: P-521 needs roughly twice the logical qubits of P-256 but still falls."
+    },
+    {
+      "id": "rsa-3072",
+      "name": "RSA-3072",
+      "family": "RSA (integer factoring)",
+      "class": "asymmetric",
+      "problem": "Integer factorization",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 3072,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 9300,
+      "logicalQubitsNote": "≈ 3n + 0.002·n·lg n → ~9,300 (Gidney–Ekerå 2019).",
+      "physicalEstimate": "Larger than RSA-2048 by a factor set by the cubic gate scaling",
+      "quantumEffect": "Fully broken; the recommended classical upgrade from 2048-bit offers no quantum relief.",
+      "infrastructure": [
+        {
+          "system": "128-bit-equivalent RSA",
+          "detail": "The parameter organizations move to for stronger classical security."
+        },
+        {
+          "system": "CNSA 1.0 RSA option",
+          "detail": "3072-bit RSA appears in pre-quantum national-security guidance."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "Chosen precisely to resist classical factoring, which is why it illustrates the point: bigger RSA keys buy classical margin but not quantum safety."
+    },
+    {
+      "id": "rsa-4096",
+      "name": "RSA-4096",
+      "family": "RSA (integer factoring)",
+      "class": "asymmetric",
+      "problem": "Integer factorization",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 4096,
+      "classicalSecurityBits": 140,
+      "logicalQubits": 12400,
+      "logicalQubitsNote": "≈ 3n + 0.002·n·lg n → ~12,400 (Gidney–Ekerå 2019).",
+      "physicalEstimate": "The largest common RSA modulus; correspondingly more qubits and gate volume",
+      "quantumEffect": "Fully broken; requires the most logical qubits of the common RSA sizes.",
+      "infrastructure": [
+        {
+          "system": "High-security certificates & CA roots",
+          "detail": "Long-lived roots and cautious deployments."
+        },
+        {
+          "system": "PGP power users & code signing",
+          "detail": "Where maximal RSA strength is preferred."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "Sets the practical ceiling on RSA logical-qubit requirements among widely used parameters."
+    },
+    {
+      "id": "ed448",
+      "name": "Ed448 / Curve448 (Goldilocks)",
+      "family": "Elliptic curve (EdDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "high",
+      "paramBits": 448,
+      "classicalSecurityBits": 224,
+      "logicalQubits": 4060,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → 4,060 (Roetteler et al. 2017).",
+      "physicalEstimate": "Between the 384-bit and 521-bit classes",
+      "quantumEffect": "Fully broken.",
+      "infrastructure": [
+        {
+          "system": "High-security TLS / SSH alternatives",
+          "detail": "Chosen where >128-bit ECC strength is wanted."
+        },
+        {
+          "system": "Modern protocol options",
+          "detail": "Offered alongside X25519 in some stacks."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "The 'extra margin' companion to Curve25519; higher classical strength, same quantum fate."
+    },
+    {
+      "id": "sm2",
+      "name": "SM2",
+      "family": "Elliptic curve (Chinese national standard)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2330,
+      "logicalQubitsNote": "256-bit prime-field ECDLP: 9n + 2⌈log₂ n⌉ + 10 → 2,330 (Roetteler et al. 2017).",
+      "physicalEstimate": "256-bit class (~126,000 cat qubits, Gouzien et al. 2023)",
+      "quantumEffect": "Fully broken — signatures and key exchange both fall.",
+      "infrastructure": [
+        {
+          "system": "Chinese national PKI",
+          "detail": "GM/T-standard certificates, government and banking systems."
+        },
+        {
+          "system": "Domestic TLS & payments",
+          "detail": "SM2 in Chinese commercial and financial infrastructure."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "Structurally identical exposure to the other 256-bit curves; included because it secures a large national ecosystem."
+    },
+    {
+      "id": "gost-34-10",
+      "name": "GOST R 34.10-2012",
+      "family": "Elliptic curve (Russian national standard)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2330,
+      "logicalQubitsNote": "256-bit variant → 2,330 logical qubits; the 512-bit variant → ≈4,636 (Roetteler et al. 2017).",
+      "physicalEstimate": "256-bit class for the common parameter",
+      "quantumEffect": "Fully broken across both the 256- and 512-bit parameter sets.",
+      "infrastructure": [
+        {
+          "system": "Russian national PKI",
+          "detail": "Government, banking and GOST-TLS deployments."
+        },
+        {
+          "system": "Regional standards compliance",
+          "detail": "Systems mandated to use GOST cryptography."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "National standards do not change the underlying hardness; GOST ECDLP falls to Shor like any other elliptic curve."
+    },
+    {
+      "id": "brainpoolp256r1",
+      "name": "brainpoolP256r1",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2330,
+      "logicalQubitsNote": "256-bit prime-field ECDLP → 2,330 logical qubits; the P384/P512 Brainpool variants scale as the NIST curves (Roetteler et al. 2017).",
+      "physicalEstimate": "256-bit class (~126,000 cat qubits, Gouzien et al. 2023)",
+      "quantumEffect": "Fully broken.",
+      "infrastructure": [
+        {
+          "system": "German & EU government eID",
+          "detail": "The German eID (nPA) and related national identity systems."
+        },
+        {
+          "system": "ICAO ePassports",
+          "detail": "Some machine-readable travel documents use Brainpool curves."
+        },
+        {
+          "system": "European banking PKI",
+          "detail": "Deployments preferring non-NIST curves."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "Chosen historically to avoid NIST curve provenance; from a quantum standpoint it is exactly as exposed."
+    },
+    {
+      "id": "dsa-2048",
+      "name": "DSA-2048",
+      "family": "Finite-field discrete log (DSA signatures)",
+      "class": "asymmetric",
+      "problem": "Discrete log in a prime field (DLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 2048,
+      "classicalSecurityBits": 112,
+      "logicalQubits": 6200,
+      "logicalQubitsNote": "Finite-field DLP, cost comparable to RSA-2048 → ≈6,200 logical qubits (Gidney–Ekerå 2019).",
+      "physicalEstimate": "Same order as RSA-2048",
+      "quantumEffect": "Fully broken — the signing key is recovered from public parameters.",
+      "infrastructure": [
+        {
+          "system": "Legacy digital signatures",
+          "detail": "Older document- and software-signing systems."
+        },
+        {
+          "system": "Legacy DNSSEC & SSH",
+          "detail": "DSA host keys (now disabled by default) and older signed zones."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "Largely deprecated classically; retained here because DSA keys persist in long-lived legacy systems."
+    },
+    {
+      "id": "elgamal-2048",
+      "name": "ElGamal-2048",
+      "family": "Finite-field discrete log (encryption)",
+      "class": "asymmetric",
+      "problem": "Discrete log in a prime field (DLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 2048,
+      "classicalSecurityBits": 112,
+      "logicalQubits": 6200,
+      "logicalQubitsNote": "Finite-field DLP → ≈6,200 logical qubits (Gidney–Ekerå 2019).",
+      "physicalEstimate": "Same order as RSA-2048",
+      "quantumEffect": "Fully broken — ciphertexts are decryptable once the discrete log is solved.",
+      "infrastructure": [
+        {
+          "system": "Classic OpenPGP",
+          "detail": "ElGamal encryption subkeys in traditional PGP/GPG keyrings."
+        },
+        {
+          "system": "Legacy encryption tools",
+          "detail": "Older systems that adopted ElGamal for confidentiality."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "gidney-ekera-2019"
+      ],
+      "notes": "A prime harvest-now, decrypt-later concern for archived PGP-encrypted material."
+    },
+    {
+      "id": "p-224",
+      "name": "NIST P-224 (secp224r1)",
+      "family": "Elliptic curve (ECDSA / ECDH)",
+      "class": "asymmetric",
+      "problem": "Elliptic-curve discrete log (ECDLP)",
+      "attack": "Shor",
+      "severity": "catastrophic",
+      "paramBits": 224,
+      "classicalSecurityBits": 112,
+      "logicalQubits": 2042,
+      "logicalQubitsNote": "9n + 2⌈log₂ n⌉ + 10 → 2,042 (Roetteler et al. 2017) — the fewest logical qubits of the standard curves.",
+      "physicalEstimate": "Slightly below the 256-bit class",
+      "quantumEffect": "Fully broken, and the cheapest standard elliptic curve to attack.",
+      "infrastructure": [
+        {
+          "system": "Legacy TLS & certificates",
+          "detail": "Older 112-bit-strength ECC still present in the field."
+        },
+        {
+          "system": "Constrained / IoT",
+          "detail": "Smaller curves chosen for performance on limited devices."
+        }
+      ],
+      "refs": [
+        "shor-1997",
+        "roetteler-2017"
+      ],
+      "notes": "Among widely standardized curves, P-224 sits at the low end of the logical-qubit requirement, so it is the first ECC target to fall."
+    },
+    {
+      "id": "aes-128",
+      "name": "AES-128",
+      "family": "Block cipher (symmetric)",
+      "class": "symmetric",
+      "problem": "Exhaustive key search",
+      "attack": "Grover",
+      "severity": "low",
+      "paramBits": 128,
+      "classicalSecurityBits": 128,
+      "logicalQubits": 2953,
+      "logicalQubitsNote": "≈2,953 logical qubits for the Grover oracle (Grassl et al. 2016); refined by Jaques et al. 2020.",
+      "physicalEstimate": "Dominated by an astronomically deep serial Grover iteration rather than qubit count",
+      "quantumEffect": "Grover nominally halves the search exponent to ~2⁶⁴, but realistic depth limits and error-correction overhead keep the effective cost near 2¹²⁸ (NCSC / Jaques et al.).",
+      "infrastructure": [
+        {
+          "system": "TLS bulk encryption",
+          "detail": "AES-128-GCM protects a large share of web traffic payloads."
+        },
+        {
+          "system": "Wi-Fi (WPA2/WPA3), VPNs",
+          "detail": "Link and tunnel encryption."
+        },
+        {
+          "system": "Disk & messaging encryption",
+          "detail": "Default symmetric layer in many at-rest and end-to-end systems."
+        }
+      ],
+      "refs": [
+        "grover-1996",
+        "grassl-2016",
+        "jaques-2020"
+      ],
+      "notes": "The Grover speedup is real in theory but does not parallelize well; most analysts treat AES-128 as retaining a substantial, though reduced, margin. Doubling to AES-256 removes the concern entirely."
+    },
+    {
+      "id": "aes-256",
+      "name": "AES-256",
+      "family": "Block cipher (symmetric)",
+      "class": "symmetric",
+      "problem": "Exhaustive key search",
+      "attack": "Grover",
+      "severity": "minimal",
+      "paramBits": 256,
+      "classicalSecurityBits": 256,
+      "logicalQubits": 6681,
+      "logicalQubitsNote": "≈6,681 logical qubits for the Grover oracle (Grassl et al. 2016).",
+      "physicalEstimate": "Not the binding constraint; the serial iteration depth is prohibitive",
+      "quantumEffect": "Grover reduces the exponent to ~2¹²⁸ — still comfortably out of reach. AES-256 is the recommended symmetric choice for the quantum era.",
+      "infrastructure": [
+        {
+          "system": "High-security disk encryption",
+          "detail": "FileVault, LUKS and BitLocker in 256-bit modes."
+        },
+        {
+          "system": "TLS (AES-256-GCM)",
+          "detail": "Higher-strength cipher suites."
+        },
+        {
+          "system": "CNSA-approved symmetric layer",
+          "detail": "AES-256 is the mandated symmetric algorithm for national-security systems."
+        }
+      ],
+      "refs": [
+        "grover-1996",
+        "grassl-2016"
+      ],
+      "notes": "Included as the reassuring baseline: symmetric cryptography with adequate key length is not the quantum emergency. The crisis is asymmetric."
+    },
+    {
+      "id": "3des",
+      "name": "3DES (Triple DES)",
+      "family": "Block cipher (symmetric)",
+      "class": "symmetric",
+      "problem": "Exhaustive key search",
+      "attack": "Grover",
+      "severity": "moderate",
+      "paramBits": 112,
+      "classicalSecurityBits": 112,
+      "logicalQubits": null,
+      "logicalQubitsNote": "Grover applies as for AES; the concern is the small effective key size rather than qubit count.",
+      "physicalEstimate": "Not the binding constraint",
+      "quantumEffect": "Grover lowers the ~112-bit effective strength toward ~56-bit search — on top of existing classical weaknesses (Sweet32).",
+      "infrastructure": [
+        {
+          "system": "Legacy payments (EMV, POS, ATM)",
+          "detail": "Older card and terminal networks."
+        },
+        {
+          "system": "Legacy TLS & VPNs",
+          "detail": "Deprecated cipher suites still enabled on old systems."
+        },
+        {
+          "system": "Mainframe & financial legacy",
+          "detail": "Long-lived back-office systems."
+        }
+      ],
+      "refs": [
+        "grover-1996"
+      ],
+      "notes": "Already deprecated for classical reasons; Grover only deepens the case for retirement."
+    },
+    {
+      "id": "sha-1",
+      "name": "SHA-1",
+      "family": "Hash function",
+      "class": "hash",
+      "problem": "Preimage / collision",
+      "attack": "Grover",
+      "severity": "moderate",
+      "paramBits": 160,
+      "classicalSecurityBits": 80,
+      "logicalQubits": null,
+      "logicalQubitsNote": "Grover preimage cost ~2⁸⁰; collisions are already classically practical (SHAttered, 2017).",
+      "physicalEstimate": "Not the binding constraint",
+      "quantumEffect": "Preimage resistance drops toward ~2⁸⁰ under Grover, compounding an already broken collision story.",
+      "infrastructure": [
+        {
+          "system": "Legacy certificates (deprecated)",
+          "detail": "Removed from Web PKI but present in old systems."
+        },
+        {
+          "system": "Git object identifiers",
+          "detail": "Historically SHA-1; migrating to SHA-256."
+        },
+        {
+          "system": "Legacy HMAC & signatures",
+          "detail": "Older integrity mechanisms."
+        }
+      ],
+      "refs": [
+        "grover-1996"
+      ],
+      "notes": "Collision-broken classically since 2017; listed for completeness and because legacy usage lingers."
+    },
+    {
+      "id": "sha-256",
+      "name": "SHA-256",
+      "family": "Hash function",
+      "class": "hash",
+      "problem": "Preimage / collision",
+      "attack": "Grover",
+      "severity": "minimal",
+      "paramBits": 256,
+      "classicalSecurityBits": 128,
+      "logicalQubits": null,
+      "logicalQubitsNote": "Grover preimage cost ~2¹²⁸; quantum collision search offers no meaningful advantage over the classical 2¹²⁸ birthday bound in practice.",
+      "physicalEstimate": "Not the binding constraint",
+      "quantumEffect": "Grover halves preimage resistance to ~2¹²⁸ — still secure. SHA-256 remains suitable in the quantum era.",
+      "infrastructure": [
+        {
+          "system": "Bitcoin proof-of-work & block hashing",
+          "detail": "Mining and chain integrity; also HASH160 = RIPEMD-160(SHA-256) for addresses."
+        },
+        {
+          "system": "TLS & code-signing digests",
+          "detail": "Certificate fingerprints and signed-artifact hashes."
+        },
+        {
+          "system": "HMAC-SHA256 everywhere",
+          "detail": "Message authentication across countless protocols."
+        }
+      ],
+      "refs": [
+        "grover-1996"
+      ],
+      "notes": "A key reassurance for blockchains: the hash layer is not the weak point — the signature layer (secp256k1) is."
+    },
+    {
+      "id": "ripemd-160",
+      "name": "RIPEMD-160",
+      "family": "Hash function",
+      "class": "hash",
+      "problem": "Preimage / collision",
+      "attack": "Grover",
+      "severity": "low",
+      "paramBits": 160,
+      "classicalSecurityBits": 80,
+      "logicalQubits": null,
+      "logicalQubitsNote": "Grover preimage cost ~2⁸⁰; collision birthday bound ~2⁸⁰ classically.",
+      "physicalEstimate": "Not the binding constraint",
+      "quantumEffect": "Preimage resistance falls toward ~2⁸⁰ under Grover, but address security in practice rests on the elliptic-curve key, not the hash.",
+      "infrastructure": [
+        {
+          "system": "Bitcoin & derived addresses",
+          "detail": "HASH160 = RIPEMD-160(SHA-256(pubkey)) forms the address."
+        },
+        {
+          "system": "Ethereum precompile",
+          "detail": "RIPEMD-160 available at a precompiled contract address."
+        }
+      ],
+      "refs": [
+        "grover-1996"
+      ],
+      "notes": "The 160-bit output narrows the Grover margin, yet the operative quantum risk for a coin address is recovery of the secp256k1 key once the public key is exposed."
+    }
+  ],
+  "qubitBands": [
+    {
+      "id": "band-2000",
+      "label": "≈2,000–2,350 logical",
+      "logicalQubits": 2100,
+      "targets": [
+        "P-224",
+        "secp256k1",
+        "P-256",
+        "Ed25519",
+        "SM2",
+        "BN254",
+        "GOST-256",
+        "Brainpool-256"
+      ],
+      "scenarios": {
+        "aggressive": 2032,
+        "consensus": 2037,
+        "conservative": 2046
+      },
+      "refs": [
+        "roetteler-2017",
+        "haner-2020",
+        "gouzien-2023",
+        "ibm-roadmap-2025",
+        "gri-2024"
+      ],
+      "note": "The 256-bit elliptic curves — the workhorses of TLS and every major blockchain. ECC is an easier quantum target than RSA at equal classical strength (Roetteler et al. 2017), so this band is expected to fall first."
+    },
+    {
+      "id": "band-3500",
+      "label": "≈3,450–4,100 logical",
+      "logicalQubits": 3700,
+      "targets": [
+        "BLS12-381",
+        "P-384",
+        "Ed448",
+        "Brainpool-384"
+      ],
+      "scenarios": {
+        "aggressive": 2034,
+        "consensus": 2040,
+        "conservative": 2049
+      },
+      "refs": [
+        "roetteler-2017",
+        "ibm-roadmap-2025",
+        "gri-2024"
+      ],
+      "note": "Larger curves and pairing-friendly BLS12-381 (Ethereum consensus, KZG commitments, many SNARKs). More qubits and gate volume push it a few years past the 256-bit band."
+    },
+    {
+      "id": "band-4700",
+      "label": "≈4,600–4,750 logical",
+      "logicalQubits": 4700,
+      "targets": [
+        "P-521",
+        "GOST-512",
+        "Brainpool-512"
+      ],
+      "scenarios": {
+        "aggressive": 2035,
+        "consensus": 2041,
+        "conservative": 2050
+      },
+      "refs": [
+        "roetteler-2017",
+        "ibm-roadmap-2025",
+        "gri-2024"
+      ],
+      "note": "The largest standard elliptic curves. High classical margin, but Shor still applies."
+    },
+    {
+      "id": "band-6200",
+      "label": "≈6,200 logical",
+      "logicalQubits": 6200,
+      "targets": [
+        "RSA-2048",
+        "FFDH-2048",
+        "DSA-2048",
+        "ElGamal-2048"
+      ],
+      "scenarios": {
+        "aggressive": 2035,
+        "consensus": 2039,
+        "conservative": 2048
+      },
+      "refs": [
+        "gidney-ekera-2019",
+        "gidney-2025",
+        "gri-2024",
+        "ibm-roadmap-2025"
+      ],
+      "note": "RSA-2048 and 2048-bit finite-field cryptography. This is the level most expert surveys use to define a 'cryptographically relevant quantum computer'. Note that algorithmic advances (Gidney 2025) can move RSA-2048 into a lower qubit band, accelerating it toward the ECC timeline."
+    },
+    {
+      "id": "band-9300",
+      "label": "≈9,300 logical",
+      "logicalQubits": 9300,
+      "targets": [
+        "RSA-3072"
+      ],
+      "scenarios": {
+        "aggressive": 2037,
+        "consensus": 2042,
+        "conservative": 2052
+      },
+      "refs": [
+        "gidney-ekera-2019",
+        "gri-2024",
+        "ibm-roadmap-2025"
+      ],
+      "note": "128-bit-equivalent RSA — the parameter chosen for stronger classical security, reached later purely because of the cubic gate scaling."
+    },
+    {
+      "id": "band-12400",
+      "label": "≈12,400 logical",
+      "logicalQubits": 12400,
+      "targets": [
+        "RSA-4096"
+      ],
+      "scenarios": {
+        "aggressive": 2038,
+        "consensus": 2044,
+        "conservative": 2055
+      },
+      "refs": [
+        "gidney-ekera-2019",
+        "gri-2024",
+        "ibm-roadmap-2025"
+      ],
+      "note": "The largest common RSA modulus; sets the practical ceiling on RSA logical-qubit requirements."
+    },
+    {
+      "id": "band-20000",
+      "label": "≈20,000+ logical",
+      "logicalQubits": 20000,
+      "targets": [
+        "Large safety margin / future high-assurance targets"
+      ],
+      "scenarios": {
+        "aggressive": 2040,
+        "consensus": 2047,
+        "conservative": 2058
+      },
+      "refs": [
+        "gri-2024",
+        "ibm-roadmap-2025"
+      ],
+      "note": "A comfortable-margin band representing routine, at-scale cryptanalysis rather than a first heroic demonstration."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "aggressive",
+      "label": "Aggressive",
+      "blurb": "Anchored on vendor hardware roadmaps taken at face value — e.g. IBM Starling (200 logical qubits, 2029) scaling to Blue Jay (2,000 logical, 2033) and beyond. Assumes roadmaps largely hold and error-correction overheads keep falling.",
+      "sourceType": "vendor"
+    },
+    {
+      "id": "consensus",
+      "label": "Consensus",
+      "blurb": "Anchored on the median of expert opinion, chiefly the Global Risk Institute / evolutionQ threat-timeline survey, which now puts a meaningful (~1-in-3) probability of an RSA-2048-capable machine by 2034 and roughly even odds in the late 2030s.",
+      "sourceType": "survey"
+    },
+    {
+      "id": "conservative",
+      "label": "Conservative",
+      "blurb": "Anchored on statistical extrapolations of historical hardware progress and skeptical expert tails, which place a low probability on RSA-2048 before the late 2030s and treat routine cryptanalysis as a 2050s prospect.",
+      "sourceType": "academic"
+    }
+  ],
+  "references": [
+    {
+      "id": "shor-1997",
+      "authors": "P. W. Shor",
+      "year": 1997,
+      "title": "Polynomial-Time Algorithms for Prime Factorization and Discrete Logarithms on a Quantum Computer",
+      "venue": "SIAM Journal on Computing 26(5), 1484–1509 (preliminary version, FOCS 1994)",
+      "type": "paper",
+      "url": "https://doi.org/10.1137/S0097539795293172",
+      "doi": "10.1137/S0097539795293172",
+      "finding": "The foundational result: a quantum computer factors integers and computes discrete logarithms in polynomial time, breaking RSA, finite-field Diffie–Hellman/DSA and elliptic-curve cryptography."
+    },
+    {
+      "id": "grover-1996",
+      "authors": "L. K. Grover",
+      "year": 1996,
+      "title": "A fast quantum mechanical algorithm for database search",
+      "venue": "Proc. 28th ACM Symposium on Theory of Computing (STOC), 212–219",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/quant-ph/9605043",
+      "doi": "10.1145/237814.237866",
+      "finding": "A quadratic speedup for unstructured search, giving the best generic quantum attack on symmetric keys and hash preimages (effective strength ~n/2 bits)."
+    },
+    {
+      "id": "proos-zalka-2003",
+      "authors": "J. Proos and C. Zalka",
+      "year": 2003,
+      "title": "Shor's discrete logarithm quantum algorithm for elliptic curves",
+      "venue": "Quantum Information and Computation 3(4), 317–344",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/quant-ph/0301141",
+      "doi": "10.26421/QIC3.4-3",
+      "finding": "First detailed analysis of Shor's algorithm for the elliptic-curve discrete log, establishing that ECC is an easier quantum target than similarly rated RSA."
+    },
+    {
+      "id": "grassl-2016",
+      "authors": "M. Grassl, B. Langenberg, M. Roetteler and R. Steinwandt",
+      "year": 2016,
+      "title": "Applying Grover's Algorithm to AES: Quantum Resource Estimates",
+      "venue": "Post-Quantum Cryptography (PQCrypto 2016), LNCS 9606, 29–43",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/1512.04965",
+      "doi": "10.1007/978-3-319-29360-8_3",
+      "finding": "Concrete logical-qubit and gate counts for a Grover key search on AES-128/192/256 (≈2,953 / 4,449 / 6,681 qubits), confirming that symmetric keys are only quadratically weakened."
+    },
+    {
+      "id": "roetteler-2017",
+      "authors": "M. Roetteler, M. Naehrig, K. M. Svore and K. Lauter",
+      "year": 2017,
+      "title": "Quantum Resource Estimates for Computing Elliptic Curve Discrete Logarithms",
+      "venue": "Advances in Cryptology — ASIACRYPT 2017, LNCS 10625, 241–270",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/1706.06752",
+      "doi": "10.1007/978-3-319-70697-9_9",
+      "finding": "Precise estimate of 9n + 2⌈log₂ n⌉ + 10 logical qubits for an n-bit curve — 2,330 for P-256 — the standard reference for ECC qubit requirements."
+    },
+    {
+      "id": "haner-2020",
+      "authors": "T. Häner, S. Jaques, M. Naehrig, M. Roetteler and M. Soeken",
+      "year": 2020,
+      "title": "Improved Quantum Circuits for Elliptic Curve Discrete Logarithms",
+      "venue": "Post-Quantum Cryptography (PQCrypto 2020), LNCS 12100, 425–444",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/2001.09580",
+      "doi": "10.1007/978-3-030-44223-1_23",
+      "finding": "Optimized elliptic-curve circuits reducing the 256-bit ECDLP requirement to roughly 2,124 logical qubits."
+    },
+    {
+      "id": "jaques-2020",
+      "authors": "S. Jaques, M. Naehrig, M. Roetteler and F. Virdia",
+      "year": 2020,
+      "title": "Implementing Grover Oracles for Quantum Key Search on AES and LowMC",
+      "venue": "Advances in Cryptology — EUROCRYPT 2020, LNCS 12106, 280–310",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/1910.01700",
+      "doi": "10.1007/978-3-030-45724-2_10",
+      "finding": "Refined, depth-aware Grover oracle costs for AES, reinforcing that under realistic depth limits the practical speedup against AES is modest."
+    },
+    {
+      "id": "gidney-ekera-2019",
+      "authors": "C. Gidney and M. Ekerå",
+      "year": 2021,
+      "title": "How to factor 2048-bit RSA integers in 8 hours using 20 million noisy qubits",
+      "venue": "Quantum 5, 433 (preprint 2019)",
+      "type": "paper",
+      "url": "https://quantum-journal.org/papers/q-2021-04-15-433/",
+      "doi": "10.22331/q-2021-04-15-433",
+      "finding": "Landmark physical-resource estimate for RSA-2048: ~20 million noisy qubits in ~8 hours, using ≈3n + 0.002·n·lg n logical qubits."
+    },
+    {
+      "id": "webber-2022",
+      "authors": "M. Webber, V. Elfving, S. Weidt and W. K. Hensinger",
+      "year": 2022,
+      "title": "The impact of hardware specifications on reaching quantum advantage in the fault tolerant regime",
+      "venue": "AVS Quantum Science 4, 013801",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/2108.12371",
+      "doi": "10.1116/5.0073075",
+      "finding": "Shows how physical-qubit counts to break RSA-2048 swing by orders of magnitude with hardware parameters (gate error, cycle time, connectivity), underlining the sensitivity of all such estimates."
+    },
+    {
+      "id": "gouzien-2023",
+      "authors": "É. Gouzien, D. Ruiz, F.-M. Le Régent, J. Guillaud and N. Sangouard",
+      "year": 2023,
+      "title": "Computing 256-bit Elliptic Curve Logarithm in 9 Hours with 126133 Cat Qubits",
+      "venue": "Physical Review Letters 131, 040602",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/2302.06639",
+      "doi": "10.1103/PhysRevLett.131.040602",
+      "finding": "A concrete architecture breaking a 256-bit elliptic curve with ≈126,000 cat qubits in ~9 hours, illustrating how error-correction choices reshape the physical cost."
+    },
+    {
+      "id": "gidney-2025",
+      "authors": "C. Gidney",
+      "year": 2025,
+      "title": "How to factor 2048-bit RSA integers with less than a million noisy qubits",
+      "venue": "arXiv preprint 2505.15917",
+      "type": "paper",
+      "url": "https://arxiv.org/abs/2505.15917",
+      "doi": "10.48550/arXiv.2505.15917",
+      "finding": "Cuts the 2019 estimate ~20-fold: RSA-2048 in under a week with fewer than 1 million noisy qubits, via approximate residue arithmetic and yoked surface codes."
+    },
+    {
+      "id": "mosca-2018",
+      "authors": "M. Mosca",
+      "year": 2018,
+      "title": "Cybersecurity in an Era with Quantum Computers: Will We Be Ready?",
+      "venue": "IEEE Security & Privacy 16(5), 38–41",
+      "type": "paper",
+      "url": "https://doi.org/10.1109/MSP.2018.3761723",
+      "doi": "10.1109/MSP.2018.3761723",
+      "finding": "Frames the migration deadline with Mosca's inequality: if data must stay secret for X years, migration takes Y years, and a quantum computer arrives in Z years, then X + Y > Z means you are already too late."
+    },
+    {
+      "id": "gri-2024",
+      "authors": "M. Mosca and M. Piani",
+      "year": 2024,
+      "title": "2024 Quantum Threat Timeline Report",
+      "venue": "Global Risk Institute & evolutionQ (6th edition), December 2024",
+      "type": "report",
+      "url": "https://globalriskinstitute.org/publication/2024-quantum-threat-timeline-report/",
+      "doi": "",
+      "finding": "Annual expert survey; the 2024 edition finds the threat closer than previously thought, with a roughly one-in-three assessed likelihood of an RSA-2048-capable machine by 2034 — about double the 2022 estimate."
+    },
+    {
+      "id": "fips-203",
+      "authors": "NIST",
+      "year": 2024,
+      "title": "FIPS 203 — Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)",
+      "venue": "U.S. National Institute of Standards and Technology, 13 Aug 2024",
+      "type": "standard",
+      "url": "https://doi.org/10.6028/NIST.FIPS.203",
+      "doi": "10.6028/NIST.FIPS.203",
+      "finding": "Standardizes ML-KEM (from CRYSTALS-Kyber) as the quantum-resistant replacement for RSA and ECDH key establishment."
+    },
+    {
+      "id": "fips-204",
+      "authors": "NIST",
+      "year": 2024,
+      "title": "FIPS 204 — Module-Lattice-Based Digital Signature Standard (ML-DSA)",
+      "venue": "U.S. National Institute of Standards and Technology, 13 Aug 2024",
+      "type": "standard",
+      "url": "https://doi.org/10.6028/NIST.FIPS.204",
+      "doi": "10.6028/NIST.FIPS.204",
+      "finding": "Standardizes ML-DSA (from CRYSTALS-Dilithium) as the primary quantum-resistant replacement for RSA and ECDSA signatures."
+    },
+    {
+      "id": "fips-205",
+      "authors": "NIST",
+      "year": 2024,
+      "title": "FIPS 205 — Stateless Hash-Based Digital Signature Standard (SLH-DSA)",
+      "venue": "U.S. National Institute of Standards and Technology, 13 Aug 2024",
+      "type": "standard",
+      "url": "https://doi.org/10.6028/NIST.FIPS.205",
+      "doi": "10.6028/NIST.FIPS.205",
+      "finding": "Standardizes SLH-DSA (from SPHINCS+), a conservative hash-based signature scheme whose security rests only on hash properties — a hedge against lattice cryptanalysis."
+    },
+    {
+      "id": "nist-ir-8547",
+      "authors": "NIST",
+      "year": 2024,
+      "title": "NIST IR 8547 — Transition to Post-Quantum Cryptography Standards (Initial Public Draft)",
+      "venue": "U.S. National Institute of Standards and Technology, November 2024",
+      "type": "standard",
+      "url": "https://doi.org/10.6028/NIST.IR.8547.ipd",
+      "doi": "10.6028/NIST.IR.8547.ipd",
+      "finding": "Sets the migration schedule: 112-bit-strength classical public-key algorithms (RSA, finite-field DH, ECC) are deprecated after 2030 and disallowed after 2035."
+    },
+    {
+      "id": "ibm-roadmap-2025",
+      "authors": "IBM Quantum",
+      "year": 2025,
+      "title": "Large-scale, fault-tolerant quantum computing — IBM Quantum roadmap",
+      "venue": "IBM Quantum Blog, June 2025",
+      "type": "roadmap",
+      "url": "https://www.ibm.com/quantum/blog/large-scale-ftqc",
+      "doi": "",
+      "finding": "Vendor roadmap targeting IBM Quantum Starling (200 logical qubits, 2029) and Blue Jay (2,000 logical qubits, 2033) using qLDPC bicycle codes. Aspirational, not peer-reviewed, but a concrete dated hardware anchor."
+    },
+    {
+      "id": "castryck-decru-2023",
+      "authors": "W. Castryck and T. Decru",
+      "year": 2023,
+      "title": "An Efficient Key Recovery Attack on SIDH",
+      "venue": "Advances in Cryptology — EUROCRYPT 2023, LNCS 14008, 423–447",
+      "type": "paper",
+      "url": "https://eprint.iacr.org/2022/975",
+      "doi": "10.1007/978-3-031-30589-4_15",
+      "finding": "A classical polynomial-time break of the isogeny scheme SIDH/SIKE, a former NIST finalist — a caution that even post-quantum candidates can fail, and that the migration target must itself be scrutinized."
+    }
+  ],
+  "sourceCategories": [
+    {
+      "id": "vendor",
+      "label": "Vendor roadmaps",
+      "governs": "aggressive",
+      "marketing": true,
+      "note": "Hardware vendors' published targets (e.g. IBM's roadmap) — company / marketing materials taken at face value. Drives the earliest end of every range."
+    },
+    {
+      "id": "survey",
+      "label": "Expert surveys",
+      "governs": "consensus",
+      "marketing": false,
+      "note": "Independent expert-elicitation surveys (e.g. the Global Risk Institute / evolutionQ Quantum Threat Timeline). The central estimate."
+    },
+    {
+      "id": "academic",
+      "label": "Peer-reviewed papers",
+      "governs": "conservative",
+      "marketing": false,
+      "note": "Resource-estimation and error-correction-overhead papers — the more cautious, hardware-limited end."
+    },
+    {
+      "id": "standard",
+      "label": "Standards bodies",
+      "governs": "guides",
+      "marketing": false,
+      "note": "Migration deadlines set by standards bodies (NIST). Controls the 2030 / 2035 guide lines."
+    }
+  ],
+  "web3Projects": [
+    {
+      "id": "bitcoin",
+      "name": "Bitcoin",
+      "ticker": "BTC",
+      "category": "Layer 1 · store of value",
+      "primitives": [
+        "secp256k1"
+      ],
+      "hashNote": "SHA-256 (proof-of-work, addresses) and RIPEMD-160 — Grover-only, not the near-term risk.",
+      "detail": "Every wallet is an secp256k1 key. Coins in address types that expose a public key (P2PK, and any reused address that has spent once) could be forged the moment ECDSA falls; a large share of supply sits in such addresses."
+    },
+    {
+      "id": "ethereum",
+      "name": "Ethereum",
+      "ticker": "ETH",
+      "category": "Layer 1 · smart contracts",
+      "primitives": [
+        "secp256k1",
+        "bls12-381"
+      ],
+      "hashNote": "Keccak-256 — Grover-only.",
+      "detail": "Externally-owned accounts sign with secp256k1 (ECDSA); post-Merge consensus validators sign with BLS12-381. Both are Shor-breakable — the account layer is the more immediate exposure."
+    },
+    {
+      "id": "tether",
+      "name": "Tether",
+      "ticker": "USDT",
+      "category": "Stablecoin",
+      "primitives": [
+        "secp256k1",
+        "x25519-ed25519"
+      ],
+      "detail": "A token, not a chain: its exposure is inherited from every ledger it is issued on — Ethereum and Tron (secp256k1), Solana and others (Ed25519)."
+    },
+    {
+      "id": "bnb",
+      "name": "BNB Chain",
+      "ticker": "BNB",
+      "category": "Layer 1 · EVM",
+      "primitives": [
+        "secp256k1"
+      ],
+      "detail": "EVM-compatible; accounts and validators use secp256k1 (ECDSA)."
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "ticker": "SOL",
+      "category": "Layer 1",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "hashNote": "SHA-256 (Proof-of-History) — Grover-only.",
+      "detail": "Every keypair is Ed25519, which is Shor-breakable. Proof-of-History is a SHA-256 hash chain and only quadratically weakened."
+    },
+    {
+      "id": "usdc",
+      "name": "USD Coin",
+      "ticker": "USDC",
+      "category": "Stablecoin",
+      "primitives": [
+        "secp256k1",
+        "x25519-ed25519"
+      ],
+      "detail": "Multi-chain stablecoin; exposure is inherited from its host chains (Ethereum secp256k1, Solana Ed25519, and others)."
+    },
+    {
+      "id": "xrp",
+      "name": "XRP Ledger",
+      "ticker": "XRP",
+      "category": "Layer 1 · payments",
+      "primitives": [
+        "secp256k1",
+        "x25519-ed25519"
+      ],
+      "detail": "Accounts may use secp256k1 (default) or Ed25519 — both are Shor-breakable."
+    },
+    {
+      "id": "cardano",
+      "name": "Cardano",
+      "ticker": "ADA",
+      "category": "Layer 1",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "detail": "Ed25519 (EdDSA) secures accounts and stake keys, and the KES/VRF machinery builds on the same curve. All Shor-breakable."
+    },
+    {
+      "id": "dogecoin",
+      "name": "Dogecoin",
+      "ticker": "DOGE",
+      "category": "Layer 1 · proof-of-work",
+      "primitives": [
+        "secp256k1"
+      ],
+      "hashNote": "Scrypt (proof-of-work) — Grover-only.",
+      "detail": "Bitcoin-derived; spend authority rests on secp256k1 ECDSA signatures."
+    },
+    {
+      "id": "tron",
+      "name": "TRON",
+      "ticker": "TRX",
+      "category": "Layer 1 · EVM-like",
+      "primitives": [
+        "secp256k1"
+      ],
+      "detail": "Accounts use secp256k1 (ECDSA), like Ethereum externally-owned accounts."
+    },
+    {
+      "id": "avalanche",
+      "name": "Avalanche",
+      "ticker": "AVAX",
+      "category": "Layer 1",
+      "primitives": [
+        "secp256k1",
+        "bls12-381"
+      ],
+      "detail": "C-Chain accounts use secp256k1; the Primary Network aggregates validator signatures with BLS12-381. Both Shor-breakable."
+    },
+    {
+      "id": "chainlink",
+      "name": "Chainlink",
+      "ticker": "LINK",
+      "category": "Oracle network",
+      "primitives": [
+        "secp256k1"
+      ],
+      "detail": "Oracle nodes sign reports with secp256k1 (ECDSA); Off-Chain Reporting aggregates those node signatures, so the node-key layer is the exposure."
+    },
+    {
+      "id": "polkadot",
+      "name": "Polkadot",
+      "ticker": "DOT",
+      "category": "Layer 0",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "detail": "Accounts use sr25519 (Schnorrkel over Ristretto / Curve25519) or Ed25519, and GRANDPA finality uses Ed25519 — all Curve25519-family and Shor-breakable."
+    },
+    {
+      "id": "polygon",
+      "name": "Polygon",
+      "ticker": "POL",
+      "category": "Layer 2 · sidechain",
+      "primitives": [
+        "secp256k1",
+        "bls12-381"
+      ],
+      "detail": "EVM accounts use secp256k1; the proof-of-stake layer's checkpoint and validator signatures use BLS12-381."
+    },
+    {
+      "id": "litecoin",
+      "name": "Litecoin",
+      "ticker": "LTC",
+      "category": "Layer 1 · proof-of-work",
+      "primitives": [
+        "secp256k1"
+      ],
+      "hashNote": "Scrypt (proof-of-work) — Grover-only.",
+      "detail": "Bitcoin-derived; spend authority rests on secp256k1 ECDSA."
+    },
+    {
+      "id": "internet-computer",
+      "name": "Internet Computer",
+      "ticker": "ICP",
+      "category": "Layer 1",
+      "primitives": [
+        "bls12-381",
+        "x25519-ed25519"
+      ],
+      "detail": "Chain-key cryptography is threshold BLS on BLS12-381; node and identity keys use Ed25519. BLS is the defining exposure."
+    },
+    {
+      "id": "uniswap",
+      "name": "Uniswap",
+      "ticker": "UNI",
+      "category": "DeFi · DEX",
+      "primitives": [
+        "secp256k1"
+      ],
+      "detail": "An Ethereum protocol: every user transaction is an secp256k1 (ECDSA) signature, so exposure tracks Ethereum's account layer."
+    },
+    {
+      "id": "cosmos",
+      "name": "Cosmos Hub",
+      "ticker": "ATOM",
+      "category": "Layer 0 / Layer 1",
+      "primitives": [
+        "secp256k1",
+        "x25519-ed25519"
+      ],
+      "detail": "Accounts use secp256k1; CometBFT (Tendermint) validators use Ed25519. Both Shor-breakable."
+    },
+    {
+      "id": "stellar",
+      "name": "Stellar",
+      "ticker": "XLM",
+      "category": "Layer 1 · payments",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "detail": "Every account is Ed25519 (EdDSA) — Shor-breakable."
+    },
+    {
+      "id": "monero",
+      "name": "Monero",
+      "ticker": "XMR",
+      "category": "Layer 1 · privacy",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "detail": "Ring signatures and stealth addresses build on Ed25519 / Curve25519; Shor would break both spend authority and the unlinkability the chain depends on."
+    },
+    {
+      "id": "filecoin",
+      "name": "Filecoin",
+      "ticker": "FIL",
+      "category": "Layer 1 · storage",
+      "primitives": [
+        "bls12-381",
+        "secp256k1"
+      ],
+      "detail": "Default account and consensus signatures are BLS12-381, with secp256k1 also supported. BLS is the primary exposure."
+    },
+    {
+      "id": "aptos",
+      "name": "Aptos",
+      "ticker": "APT",
+      "category": "Layer 1",
+      "primitives": [
+        "x25519-ed25519",
+        "bls12-381"
+      ],
+      "detail": "Accounts use Ed25519 (and multi-Ed25519); BFT consensus aggregates validator signatures with BLS12-381."
+    },
+    {
+      "id": "sui",
+      "name": "Sui",
+      "ticker": "SUI",
+      "category": "Layer 1",
+      "primitives": [
+        "x25519-ed25519",
+        "secp256k1",
+        "bls12-381"
+      ],
+      "detail": "Accounts support Ed25519 and ECDSA (secp256k1 / secp256r1); consensus uses BLS12-381 — several Shor-breakable schemes at once."
+    },
+    {
+      "id": "near",
+      "name": "NEAR Protocol",
+      "ticker": "NEAR",
+      "category": "Layer 1",
+      "primitives": [
+        "x25519-ed25519"
+      ],
+      "detail": "Accounts and access keys are Ed25519 — Shor-breakable."
+    },
+    {
+      "id": "aave",
+      "name": "Aave",
+      "ticker": "AAVE",
+      "category": "DeFi · lending",
+      "primitives": [
+        "secp256k1"
+      ],
+      "detail": "An Ethereum-based lending protocol; user actions are secp256k1 (ECDSA), so exposure tracks Ethereum's account layer."
+    }
+  ]
+}
